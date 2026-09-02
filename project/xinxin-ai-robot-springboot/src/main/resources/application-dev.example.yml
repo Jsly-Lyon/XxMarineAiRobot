@@ -1,0 +1,60 @@
+# =============================================================
+# 示例配置：复制本文件为 application-dev.yml 并填写真实值后使用。
+# 注意：application-dev*.yml 已在 .gitignore 中排除，不会提交到仓库。
+# 本文件中的占位符仅供本地开发参考，请勿写入真实密钥。
+# =============================================================
+spring:
+  ai:
+    openai:
+      # OpenAI 兼容网关地址（示例中为阿里云百炼 compatible-mode，可换 DeepSeek / 自建网关）
+      base-url: ${AI_OPENAI_BASE_URL:https://your-gateway.example.com/compatible-mode/v1}
+      api-key: ${AI_OPENAI_API_KEY:REPLACE_WITH_YOUR_API_KEY} # 模型 API Key（必填）
+
+  datasource:
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    url: ${DB_URL:jdbc:p6spy:postgresql://localhost:5432/robot}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      pool-name: AI-Robot-HikariCP
+      auto-commit: true
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-test-query: SELECT 1
+      validation-timeout: 5000
+
+  data:
+    redis: # Redis（Sa-Token token 存储 + 登录用户信息缓存 + 记忆）
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:REPLACE_WITH_YOUR_REDIS_PASSWORD} # Redis 密码（必填）
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+okhttp:
+  connect-timeout: 5000
+  read-timeout: 30000
+  write-timeout: 15000
+  max-idle-connections: 200
+  keep-alive-duration: 5
+
+searxng: # SearXNG 搜索引擎（联网搜索用）
+  url: ${SEARXNG_URL:http://localhost:8888/search}
+  count: 10
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 2592000  # token 有效期（秒），30 天
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: random-128
+  is-log: true

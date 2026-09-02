@@ -1,0 +1,61 @@
+# ============ IDE / 系统 ============
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ============ Node（Vue3 前端） ============
+node_modules/
+dist/
+*.local
+npm-debug.log*
+yarn-error.log*
+
+# ============ Java / Maven（后端） ============
+target/
+out/
+*.class
+*.log
+logs/
+
+# ============ 机密 / 本地运行配置：一律不入库 ============
+# 主项目环境配置（含模型 API Key、数据库/Redis 口令）
+**/application-dev.yml
+**/application-dev.yaml
+**/application-prod.yml
+**/application-prod.yaml
+**/application-local.yml
+**/application-local.yaml
+
+# examples 示例工程直接把连接信息写在 application.yml 中，同样不入库；
+# 需要者可参照各示例自行创建本地配置
+examples/**/src/main/resources/application*.yml
+examples/**/src/main/resources/application*.yaml
+examples/**/src/test/resources/application*.yml
+examples/**/src/test/resources/application*.yaml
+
+# MCP 配置含真实凭据（高德 Key / GitHub Token 等），本地使用、不入库
+**/mcp-servers-config.json
+
+# ============ 非代码资料：只推代码程序，不上传 ============
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.zip
+*.rar
+*.7z
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
+*.mp4
+*.mov
+*.mp3
+*.wav

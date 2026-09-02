@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.1.1</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.hhuly</groupId>
+	<artifactId>ly-mcp-server-qq</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>ly-mcp-server-qq</name>
+	<description>MCP Server: 获取 QQ 信息</description>
+	<properties>
+		<!-- JDK 版本 -->
+		<java.version>21</java.version>
+		<!-- Spring AI 版本 -->
+		<spring-ai.version>2.0.0</spring-ai.version>
+		<lombok.version>1.18.30</lombok.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.ai</groupId>
+				<artifactId>spring-ai-bom</artifactId>
+				<version>${spring-ai.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- 避免编写那些冗余的 Java 样板式代码，如 get、set 方法等 -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+		</dependency>
+
+		<!-- MCP Server WebFlux -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-server-webflux</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<!-- 添加华为云、阿里云 maven 中央仓库，提升 Jar 包下载速度 -->
+		<repository>
+			<id>huaweicloud</id>
+			<name>huawei</name>
+			<url>https://mirrors.huaweicloud.com/repository/maven/</url>
+		</repository>
+		<repository>
+			<id>aliyunmaven</id>
+			<name>aliyun</name>
+			<url>https://maven.aliyun.com/repository/public</url>
+		</repository>
+	</repositories>
+
+</project>
