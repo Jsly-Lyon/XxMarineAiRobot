@@ -46,6 +46,15 @@ public class CustomerKnowledgeSearchServiceImpl implements CustomerKnowledgeSear
     /** 多查询变体上限（含原始 query） */
     private static final int MAX_VARIANTS = 3;
 
+    /** 关键词路停用词（中英功能词，避免 OR 召回过宽污染 RRF） */
+    private static final Set<String> STOP_WORDS = Set.of(
+            "的", "是", "什么", "怎么", "如何", "为什么", "哪些", "一个", "在", "了", "用", "让", "把", "与", "和", "及", "或",
+            "可以", "这篇", "本文", "里面", "干嘛", "吗", "呢",
+            "which", "what", "how", "why", "when", "where", "who",
+            "is", "are", "was", "were", "be", "been", "being", "does", "do", "did",
+            "the", "a", "an", "of", "in", "on", "at", "to", "for", "and", "or", "not",
+            "it", "its", "this", "that", "these", "those", "with", "from", "by", "as", "used", "use");
+
     private final VectorStore vectorStore;
     private final DocChunkMapper docChunkMapper;
 
@@ -131,7 +140,7 @@ public class CustomerKnowledgeSearchServiceImpl implements CustomerKnowledgeSear
      * 多查询分解：原始 query + 把命中间义 token 逐次替换为组内其它写法生成变体（≤MAX_VARIANTS）
      */
     private List<String> queryVariants(String query) {
-        List<String> tokens = ChineseTokenizer.tokenize(query);
+        List<String> tokens = keepTokens(ChineseTokenizer.tokenize(query));
         if (tokens.isEmpty()) {
             return List.of(query);
         }
@@ -164,7 +173,7 @@ public class CustomerKnowledgeSearchServiceImpl implements CustomerKnowledgeSear
      * 关键词 tsquery：token 命中同义词组则展开为 OR 链，组间用 AND
      */
     private String keywordTsQuery(String query) {
-        List<String> tokens = ChineseTokenizer.tokenize(query);
+        List<String> tokens = keepTokens(ChineseTokenizer.tokenize(query));
         if (tokens.isEmpty()) {
             return null;
         }
@@ -172,12 +181,57 @@ public class CustomerKnowledgeSearchServiceImpl implements CustomerKnowledgeSear
         for (String token : tokens) {
             List<String> group = MarineSynonymGroups.groupOf(token);
             if (group == null) {
-                parts.add(token);
+                String term = toTsTerm(token);
+                if (term != null) {
+                    parts.add(term);
+                }
             } else {
-                parts.add("(" + String.join(" | ", group) + ")");
+                // 含空格的英文别名（如 algal bloom）需转成短语运算符：algal <-> bloom
+                List<String> orTerms = new ArrayList<>();
+                for (String member : group) {
+                    String term = toTsTerm(member);
+                    if (term != null) {
+                        orTerms.add(term);
+                    }
+                }
+                if (!orTerms.isEmpty()) {
+                    parts.add("(" + String.join(" | ", orTerms) + ")");
+                }
             }
         }
-        return String.join(" & ", parts);
+        if (parts.isEmpty()) {
+            return null;
+        }
+        // 用 OR 连接：命中任一关键词即召回（按 ts_rank 命中词数排序），
+        // 避免整句 AND 在自然语言问句下几乎必然为空
+        return String.join(" | ", parts);
+    }
+
+    /**
+     * token 转 tsquery 词：过滤会破坏语法的保留字符；含空格（英文短语）时用短语运算符 <-> 连接
+     */
+    private static String toTsTerm(String word) {
+        // 先去掉会破坏 tsquery 语法的保留字符，再按空白切词，最后用短语运算符连接
+        String cleaned = word.trim().replaceAll("[&|!()<>:'*?\\-]", " ");
+        String[] words = cleaned.split("\\s+");
+        List<String> kept = new ArrayList<>();
+        for (String w : words) {
+            if (!w.isBlank()) {
+                kept.add(w);
+            }
+        }
+        return kept.isEmpty() ? null : String.join(" <-> ", kept);
+    }
+
+    /** 过滤停用词，只保留有检索意义的实义词 */
+    private static List<String> keepTokens(List<String> tokens) {
+        List<String> kept = new ArrayList<>();
+        for (String token : tokens) {
+            if (token != null && !token.isBlank() && !STOP_WORDS.contains(token.toLowerCase())) {
+                kept.add(token);
+            }
+        }
+        return kept;
     }
 
     /**

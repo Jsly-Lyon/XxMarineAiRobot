@@ -4,6 +4,7 @@ import com.hhuly.ai.robot.constant.CustomerDocMetadata;
 import com.hhuly.ai.robot.service.CustomerKnowledgeSearchService;
 import com.hhuly.ai.robot.utils.JsonUtil;
 import com.hhuly.ai.robot.utils.Response;
+import com.hhuly.ai.robot.utils.UserContext;
 import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -73,15 +74,18 @@ public class RecallEvalController {
             int denseHit = 0;
             int hybridHit = 0;
 
+            // 评测范围 = 系统内置(owner=0) + 当前登录用户本人上传；与线上检索隔离规则一致
+            Long userId = UserContext.getUserId();
+
             for (EvalQuery q : queries) {
-                // A：单 Dense（仅系统内置文档，owner=0）
+                // A：单 Dense
                 List<Document> denseDocs = vectorStore.similaritySearch(SearchRequest.builder()
                         .query(q.getQuery())
                         .topK(topK)
-                        .filterExpression(ownerFilter())
+                        .filterExpression(ownerFilter(userId))
                         .build());
-                // B：双路 Dense + BM25 -> RRF（userId=null -> 同样仅内置）
-                List<Document> hybridDocs = searchService.search(q.getQuery(), topK, null);
+                // B：双路 Dense + BM25 -> RRF
+                List<Document> hybridDocs = searchService.search(q.getQuery(), topK, userId);
 
                 boolean d = hitAny(denseDocs, q.getExpect());
                 boolean h = hitAny(hybridDocs, q.getExpect());
@@ -111,9 +115,14 @@ public class RecallEvalController {
         }
     }
 
-    /** 仅系统内置文档（owner=0），保证 A/B 对照公平 */
-    private String ownerFilter() {
-        return String.format("%s == %d", CustomerDocMetadata.KEY_OWNER_USER_ID, CustomerDocMetadata.SYSTEM_OWNER_USER_ID);
+    /** 数据隔离：系统内置(owner=0) + 当前登录用户本人 */
+    private String ownerFilter(Long userId) {
+        String owner = CustomerDocMetadata.KEY_OWNER_USER_ID;
+        long systemOwner = CustomerDocMetadata.SYSTEM_OWNER_USER_ID;
+        if (userId == null) {
+            return String.format("%s == %d", owner, systemOwner);
+        }
+        return String.format("(%s == %d) or (%s == %d)", owner, systemOwner, owner, userId);
     }
 
     private boolean hitAny(List<Document> docs, List<String> expect) {

@@ -1,21 +1,55 @@
 {
   "topK": 5,
   "queries": [
-    {
-      "query": "用户问题1（替换成真实问题）",
-      "expect": ["期望命中的一段原文/专名，必须能在你上传的文档中出现"]
-    },
-    {
-      "query": "赤潮的成因是什么",
-      "expect": ["赤潮", "藻华"]
-    },
-    {
-      "query": "富营养化怎么影响水质",
-      "expect": ["富营养化", "营养盐"]
-    },
-    {
-      "query": "数据库向量检索怎么实现",
-      "expect": ["向量", "Milvus"]
-    }
+    { "query": "黑潮路径季节上有什么变化特征", "expect": ["偏东", "偏西"] },
+    { "query": "影响黑潮路径年际变化的大尺度指数是什么", "expect": ["NPGO"] },
+    { "query": "预测精度用了哪些评估指标", "expect": ["MAE", "MAPE"] },
+    { "query": "数据的时间范围从哪一年开始", "expect": ["1993"] },
+    { "query": "本文研究的对象海域是哪个", "expect": ["东海黑潮"] },
+    { "query": "流轴位置相对西边界有什么特点", "expect": ["偏东"] },
+    { "query": "本文作者的单位是哪里", "expect": ["大连舰艇学院"] },
+    { "query": "JCOPE2M 数据的水平分辨率是多少", "expect": ["JCOPE2M"] },
+    { "query": "锋线契合度 OFFD 是怎么定义和使用的", "expect": ["OFFD", "Ocean Front FitDegree"] },
+    { "query": "黑潮西边界的提取是基于哪个水层", "expect": ["50 m"] },
+    { "query": "文中的水平温度梯度用什么表示", "expect": ["TGrad"] },
+    { "query": "黑潮流轴是用什么方法确定的", "expect": ["流线法"] },
+    { "query": "VMD 模态分解方法是谁提出的", "expect": ["Dragomiretskiy"] },
+    { "query": "VMD 约束变分模型的模态个数设多少", "expect": ["K=4"] },
+    { "query": "LSTM 网络训练用什么优化算法", "expect": ["Adam"] },
+    { "query": "和 VMD-LSTM 对比的经典预测模型是什么", "expect": ["ARIMA"] },
+    { "query": "What does ADT mean in this study?", "expect": ["absolute dynamic topography"] },
+    { "query": "Which altimetry dataset is used to derive the fronts?", "expect": ["AVISO"] },
+    { "query": "What is MDT short for?", "expect": ["mean dynamic topography"] },
+    { "query": "Besides MDT, what composes ADT?", "expect": ["sea-level anomalies"] },
+    { "query": "Which DUACS version of the product is used?", "expect": ["DUACS 2014"] },
+    { "query": "Which MDT dataset is adopted in DUACS 2014?", "expect": ["CNES-CLS13"] },
+    { "query": "What does KE stand for?", "expect": ["Kuroshio Extension"] },
+    { "query": "What is the northern branch of the Kuroshio Extension called?", "expect": ["KENB"] },
+    { "query": "What is the SAB full name?", "expect": ["Subarctic Boundary"] },
+    { "query": "Which current flows along the Subarctic Front?", "expect": ["Subarctic Current"] },
+    { "query": "What is the current along the SAB called in this paper?", "expect": ["SAB-C"] },
+    { "query": "Why do the authors avoid the term SAF?", "expect": ["SAF"] },
+    { "query": "Which seafloor plateau affects the Kuroshio Extension east of Japan?", "expect": ["Shatsky Rise"] },
+    { "query": "Which seamount chain is west of the Kuroshio Extension turning area?", "expect": ["Emperor Seamount Chain"] },
+    { "query": "Where does the hm contour separating KENB from SAB-C start?", "expect": ["Cape Inubo"] },
+    { "query": "Which coast is used to separate the SAC from the SAB-C?", "expect": ["Hokkaido"] },
+    { "query": "Which gridded hydrographic dataset is used to validate the fronts?", "expect": ["MOAA-GPV"] },
+    { "query": "Which profiling floats provide the temperature data?", "expect": ["Argo"] },
+    { "query": "Which mooring array is used besides floats and CTD?", "expect": ["TRITON"] },
+    { "query": "Which Japanese agency provides the hydrographic section at 165E?", "expect": ["JMA"] },
+    { "query": "What quantity do the fronts follow in the ADT field?", "expect": ["geostrophic velocity"] },
+    { "query": "What wavelength is resolved by AVISO?", "expect": ["150 km"] },
+    { "query": "What is the temporal resolution of the AVISO maps?", "expect": ["20 days"] },
+    { "query": "Which two authors identified Southern Ocean fronts from altimetry?", "expect": ["Sokolov and Rintoul"] },
+    { "query": "What disturbs the path variability of the fronts?", "expect": ["mesoscale eddies"] },
+    { "query": "What kind of fronts are validated against hydrographic data?", "expect": ["hydrographic fronts"] },
+    { "query": "What are the semi-permanent paths J1 and J2 associated with?", "expect": ["J1"] },
+    { "query": "At what depth is the KE potential temperature defined?", "expect": ["300 m"] },
+    { "query": "Which ocean region is east of Japan and rich in frontal structures?", "expect": ["northwestern Pacific Ocean"] },
+    { "query": "Which variable hH is related to the coast of Hokkaido?", "expect": ["hH"] },
+    { "query": "What is used to calculate the boundary value at Cape Inubo?", "expect": ["hI"] },
+    { "query": "What kind of velocity is derived from ADT?", "expect": ["absolute geostrophic velocity"] },
+    { "query": "Which reference of 2000 dbar dynamic height is offered by the product?", "expect": ["2000 dbar"] },
+    { "query": "Which authors proposed that KE turns northward west of the seamounts?", "expect": ["Roden"] }
   ]
 }
