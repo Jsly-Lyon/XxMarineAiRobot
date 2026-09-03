@@ -58,3 +58,14 @@ sa-token:
   is-share: true
   token-style: random-128
   is-log: true
+
+# ============ 问答文档（customer-service） ============
+customer-service:
+  # 用户上传 Markdown 文件的落盘目录（需真实存在）
+  md-storage-path: ${MD_STORAGE_PATH:E:/md-storage}
+  # 系统内置固定文档扫描位置（classpath ant 模式）
+  seed-docs-pattern: ${SEED_DOCS_PATTERN:classpath*:doucument/MarineScience/**}
+  seed-docs-enabled: true
+  # 问答使用的模型名称与温度
+  model: deepseek-v3
+  temperature: 0.0

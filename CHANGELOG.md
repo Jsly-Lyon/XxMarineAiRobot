@@ -2,6 +2,38 @@
 
 本项目采用 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 风格，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.2.0] - 2026-09-03
+
+本日迭代：主题体验、文档知识接入与检索隔离。
+
+### Added（新增）
+
+- **明暗主题切换**：右上角主题按钮，本地持久化并跟随系统；暗色采用近似 IntelliJ Islands Dark 的冷灰蓝配色，覆盖侧边栏/聊天区/输入区/Markdown 与代码块。
+- **Pinia 状态管理落地**：`auth`（token/用户/登录弹窗，persist 持久化）、`chat`（模型/联网偏好）等全局状态改用 Pinia。
+- **SSE 客户端迁移**：聊天流式改为 `@microsoft/fetch-event-source`，统一携带 token、处理 401 与结束。
+- **历史分页与对话管理**：
+  - 聊天页向上滚动分页加载更早消息（防抖/防并发/滚动锚点）；
+  - 侧边栏历史列表分页加载；支持删除（二次确认、接口级联清理向量与本地文件）与重命名对话摘要。
+- **下载记录入口**：侧边栏新增“下载记录”，为后续文档上传/下载预留弹窗壳。
+- **多格式文档上传**：`POST /customer-service/document/upload`（md/txt/doc/docx/ppt/pptx/pdf/html），沿用“落盘→登记 PENDING→异步向量化→状态机”链路。
+- **统一文档解析层 `DocContentReader`**：Markdown 标题结构化分块；HTML 用 Jsoup 按标题层级切块并保留 `<pre>/<code>` 代码块；PDF 用 PDFBox 按页提取（metadata 带 page）；纯文本段落切块；Word/PPT 暂用 Tika 兜底。
+- **系统内置固定文档启动自动向量化**：扫描 `resources/doucument/MarineScience/**`（markdown/txt/word/ppt/pdf 子目录），owner=0 共享、内容哈希幂等。
+- **检索严格隔离**：入库文档统一携带 `ownerUserId`；检索仅命中“系统内置(owner=0) 或 当前登录用户本人上传”的文档。
+- 同步纳入本日对齐的知识检索与记忆相关辅助能力（分块检索、会话记忆滚动、召回评测等模块）。
+
+### Changed（优化）
+
+- 文档切块逻辑收敛为公共 `PlainTextChunker`；内置向量化与用户上传共用同一解析入口，便于后续替换官方 reader / 加 OCR / POI。
+
+### Fixed（修复）
+
+- 修复暗色模式下硬编码灰阶文字与隐藏操作按钮“白底”看不清的问题（全局暗色兜底 + Islands 风格）。
+- 修复 Markdown/代码块在暗色下的对比度与分隔。
+
+### Security（安全）
+
+- 文档向量检索按 owner 过滤，杜绝跨用户文档泄露。
+
 ## [0.1.0] - 2026-09-02
 
 首个版本：面向海洋科研的智能问答平台（品牌名「瀚海知问 AI」）整体入库，并完成前端交互重构与登录/鉴权/数据隔离改造。

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { token as authToken, clearAuth, openAuthDialog } from "@/store/auth";
+import { useAuthStore } from "@/stores/auth";
 
 // 创建 Axios 实例
 const instance = axios.create({
@@ -8,10 +8,12 @@ const instance = axios.create({
 })
 
 // 请求拦截器：统一携带登录 token
+// 注意：axios 在模块作用域初始化，这里必须在回调内部再调用 useAuthStore()
 instance.interceptors.request.use((config) => {
-    if (authToken.value) {
+    const auth = useAuthStore()
+    if (auth.token) {
         config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${authToken.value}`;
+        config.headers.Authorization = `Bearer ${auth.token}`;
     }
     return config;
 });
@@ -21,8 +23,9 @@ instance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error?.response?.status === 401) {
-            clearAuth();
-            openAuthDialog('login');
+            const auth = useAuthStore();
+            auth.clearAuth();
+            auth.openAuthDialog('login');
         }
         return Promise.reject(error);
     }
@@ -30,4 +33,3 @@ instance.interceptors.response.use(
 
 // 暴露出去
 export default instance;
-

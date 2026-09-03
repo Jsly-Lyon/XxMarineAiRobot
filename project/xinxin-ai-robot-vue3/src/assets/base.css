@@ -1,7 +1,116 @@
-/* color palette from <https://github.com/vuejs/theme> */
+/* 全局基础样式：字体渲染 / 画布 / 选区 */
 body {
-  font-family: quote-cjk-patch,Inter,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Oxygen,Open Sans,sans-serif;
+  font-family: quote-cjk-patch, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Noto Sans SC", "Microsoft YaHei", sans-serif;
   font-size: 16px;
   color: #262626;
   line-height: 28px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: #f7f9fc;
+  background-image: radial-gradient(1100px 520px at 12% -10%, rgba(77, 107, 254, 0.08), transparent 60%),
+    radial-gradient(900px 480px at 108% -6%, rgba(56, 189, 248, 0.1), transparent 55%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background-color: rgba(77, 107, 254, 0.18);
+}
+
+/* 细滚动条观感 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d3dae6 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #d3dae6;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ============ 暗色模式基础 ============ */
+/* Islands Dark 基调：页面深冷蓝黑，面板稍亮带层次 */
+.dark body {
+  background-color: #171b22;
+  background-image: radial-gradient(1100px 520px at 12% -10%, rgba(77, 107, 254, 0.13), transparent 60%),
+    radial-gradient(900px 480px at 108% -6%, rgba(14, 165, 233, 0.1), transparent 55%);
+  color: #d5dce8;
+}
+
+.dark ::selection {
+  background-color: rgba(96, 125, 255, 0.35);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #334155;
+}
+
+/* Markdown 正文在暗色下的基础文字色 */
+html.dark .markdown-container,
+html.dark .markdown-container p {
+  color: #dbe3f0;
+}
+html.dark .markdown-container :is(h1, h2, h3, h4, h5, h6) {
+  color: #f1f5f9;
+}
+html.dark .markdown-container strong {
+  color: #f8fafc;
+}
+html.dark .markdown-container blockquote {
+  color: #a6b2c3;
+  border-color: #334155;
+}
+html.dark .markdown-container a {
+  color: #7c9aff;
+}
+/* 暗色下的代码块/行内代码/表格 */
+html.dark .code-block,
+html.dark .markdown-container pre {
+  background: #1b212b;
+  border-color: #333b47;
+}
+html.dark .code-block__header {
+  background: #222a35;
+  color: #cbd5e1;
+}
+html.dark .markdown-container pre code {
+  color: #d1d5db;
+}
+html.dark .markdown-container :not(pre) > code {
+  color: #e2e8f0;
+  background-color: #334155;
+  border-color: #475569;
+}
+html.dark .markdown-container th,
+html.dark .markdown-container td {
+  border-color: #334155;
+}
+html.dark .markdown-container th {
+  background-color: #1f2937;
+}
+html.dark .markdown-container hr {
+  background-color: #334155;
+}
+
+/* 常见硬编码灰阶文字在暗色下的统一兜底（高优先级但避开已用强调色的元素） */
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-gray-700 {
+  color: #e2e8f0;
+}
+html.dark .text-gray-600 {
+  color: #cbd5e1;
+}
+html.dark .text-gray-500 {
+  color: #9aa7bd;
+}
+html.dark .text-gray-400 {
+  color: #8494ab;
 }

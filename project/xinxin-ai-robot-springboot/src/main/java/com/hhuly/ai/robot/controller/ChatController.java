@@ -9,6 +9,7 @@ import com.hhuly.ai.robot.aspect.ApiOperationLog;
 import com.hhuly.ai.robot.domain.mapper.ChatMessageMapper;
 import com.hhuly.ai.robot.domain.mapper.ChatWorkingMemoryMapper;
 import com.hhuly.ai.robot.domain.mapper.UserMemoryMapper;
+import com.hhuly.ai.robot.event.ChatWindowRollEvent;
 import com.hhuly.ai.robot.model.vo.chat.AiChatReqVO;
 import com.hhuly.ai.robot.model.vo.chat.AiResponse;
 import com.hhuly.ai.robot.model.vo.chat.DeleteChatReqVO;
@@ -25,12 +26,14 @@ import com.hhuly.ai.robot.service.SearchResultContentFetcherService;
 import com.hhuly.ai.robot.utils.MemoryBlockStripper;
 import com.hhuly.ai.robot.utils.PageResponse;
 import com.hhuly.ai.robot.utils.Response;
+import com.hhuly.ai.robot.utils.UserContext;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
@@ -56,6 +59,9 @@ public class ChatController {
 
     @Resource
     private ChatService chatService;
+
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
     @Resource
     private OpenAiChatModel openAiChatModel;
     @Resource
@@ -140,13 +146,20 @@ public class ChatController {
                     String json = memoryJson.get();
                     if (json == null || json.isBlank()) {
                         log.info("## 本次回复未剥离到记忆块（memoryJson 为空），跳过记忆落库");
-                        return;
+                    } else {
+                        log.info("## 已剥离到记忆块，开始落库，json 长度 = {}", json.length());
+                        try {
+                            memoryExtractionService.storeFromJson(chatUuid, DEV_USER_ID, json);
+                        } catch (Exception ex) {
+                            log.error("## 记忆落库异常", ex);
+                        }
                     }
-                    log.info("## 已剥离到记忆块，开始落库，json 长度 = {}", json.length());
+
+                    // 触发会话窗口滚动：超窗消息压缩回窗口，仍超则归档 t_session_memory（异步，不阻塞回复）
                     try {
-                        memoryExtractionService.storeFromJson(chatUuid, DEV_USER_ID, json);
+                        eventPublisher.publishEvent(new ChatWindowRollEvent(chatUuid, UserContext.getUserId()));
                     } catch (Exception ex) {
-                        log.error("## 记忆落库异常", ex);
+                        log.error("## 发布会话窗口滚动事件失败", ex);
                     }
                 })
                 .mapNotNull(text -> AiResponse.builder().v(text).build()); // 构建返参 AIResponse

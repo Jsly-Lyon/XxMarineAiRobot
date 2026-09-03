@@ -2,6 +2,15 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8">
+    <script>
+      // 首帧前应用主题，避免暗色闪烁
+      try {
+        var t = localStorage.getItem('hanhai_theme')
+        var dark = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (dark) document.documentElement.classList.add('dark')
+      } catch (e) {}
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>瀚海知问 AI · 海洋科研智能问答平台</title>

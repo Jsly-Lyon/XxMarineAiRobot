@@ -8,6 +8,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -62,9 +63,9 @@ public class ApiOperationLogAspect {
         // 执行耗时
         long executionTime = System.currentTimeMillis() - startTime;
 
-        // 打印出参等相关信息
+        // 打印出参等相关信息（序列化失败时降级为 toString，避免打断请求）
         log.info("====== 请求结束: [{}], 耗时: {}ms, 出参: {} =================================== ",
-                description, executionTime, JsonUtil.toJsonString(result));
+                description, executionTime, toResultStr(result));
 
         return result;
     }
@@ -89,10 +90,36 @@ public class ApiOperationLogAspect {
     }
 
     /**
-     * 转 JSON 字符串
-     * @return
+     * 入参安全转 JSON：文件对象只记文件名/大小；不可序列化类型降级为 toString
      */
     private Function<Object, String> toJsonStr() {
-        return JsonUtil::toJsonString;
+        return arg -> {
+            if (arg == null) {
+                return "null";
+            }
+            if (arg instanceof MultipartFile file) {
+                // MultipartFile 无法被 JSON 序列化（内部 Resource 不是 URL），仅记录关键信息
+                return "MultipartFile{name=" + file.getOriginalFilename() + ", size=" + file.getSize() + "}";
+            }
+            try {
+                return JsonUtil.toJsonString(arg);
+            } catch (Exception e) {
+                return String.valueOf(arg);
+            }
+        };
+    }
+
+    /**
+     * 出参安全转 JSON：序列化失败（如返回流式 Flux 等）降级为 toString
+     */
+    private String toResultStr(Object result) {
+        if (result == null) {
+            return "null";
+        }
+        try {
+            return JsonUtil.toJsonString(result);
+        } catch (Exception e) {
+            return String.valueOf(result);
+        }
     }
 }

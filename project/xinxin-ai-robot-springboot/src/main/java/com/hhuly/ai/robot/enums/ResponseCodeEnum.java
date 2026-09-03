@@ -20,6 +20,23 @@ public enum ResponseCodeEnum implements BaseExceptionInterface {
     USERNAME_OR_PASSWORD_ERROR("20002", "用户名或密码错误"),
     USERNAME_EXISTED("20003", "用户名已存在"),
     NOT_LOGIN("20004", "未登录或登录已过期"),
+
+    MD_FILE_TYPE_NOT_SUPPORT("20010", "仅支持上传 Markdown(.md) 文件"),
+    MD_FILE_SIZE_EXCEED("20011", "文件大小超过限制"),
+    MD_FILE_NOT_FOUND("20012", "Markdown 问答文件不存在"),
+    MD_FILE_EMPTY("20013", "上传文件不能为空"),
+    MD_FILE_UPLOAD_FAILED("20014", "文件上传失败"),
+    MD_FILE_CANT_DELETE("20015", "正在处理中的 Markdown 问答文件，不允许删除"),
+
+    // 别名：兼容业务侧 MARKDOWN_FILE_* / MD_FILE_NOT_EXISTED 引用（与上述同码）
+    MARKDOWN_FILE_NOT_FOUND("20012", "Markdown 问答文件不存在"),
+    MARKDOWN_FILE_CANT_DELETE("20015", "正在处理中的 Markdown 问答文件，不允许删除"),
+    MD_FILE_NOT_EXISTED("20012", "Markdown 问答文件不存在"),
+
+    UPLOAD_FILE_CANT_EMPTY("20016", "上传文件不能为空"),
+    ONLY_SUPPORT_MARKDOWN("20017", "仅支持上传 Markdown(.md) 文件"),
+    UPLOAD_FILE_FAILED("20018", "文件上传失败"),
+    DOC_TYPE_NOT_SUPPORT("20019", "不支持的文件类型，仅支持 Markdown/TXT/Word/PPT/PDF/HTML"),
     ;
 
     // 异常码

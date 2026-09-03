@@ -1,65 +1,75 @@
 <template>
     <div class="flex w-full flex-col">
-        <div class="bg-gray-100 rounded-3xl px-4 py-3 mx-4 border border-gray-200 flex flex-col">
+        <div
+          class="flex flex-col rounded-3xl border border-gray-200 bg-white/95 px-4 py-3.5 shadow-[0_8px_28px_rgba(24,39,75,0.06)] backdrop-blur transition-shadow duration-200 focus-within:border-[#4d6bfe]/35 focus-within:shadow-[0_0_0_4px_rgba(77,107,254,0.08)] dark:border-[#3a4450] dark:bg-[#222933]/95 dark:shadow-none dark:focus-within:border-[#6d8bff]/60">
         <textarea placeholder="向瀚海知问提问，开启海洋科研探索"
-            class="bg-transparent border-none outline-none w-full text-sm resize-none min-h-[24px]"
+            class="resize-none w-full bg-transparent text-sm leading-6 text-gray-800 outline-none placeholder:text-gray-400 min-h-[24px] dark:text-gray-100 dark:placeholder:text-gray-500"
             rows="1"
             v-model="userMessage"
             ref="textareaRef"
             @input="autoResize"
-            @keydown.enter.exact.prevent="handleSendMessage"></textarea>
+            @keydown.enter="handleEnterKey"></textarea>
 
          <!-- 下方容器 -->
         <div class="flex mt-3">
             	<div class="flex gap-2 relative">
                 <!-- 大模型下拉框 -->
-                <div class="border border-gray-300 px-2 py-1 rounded-3xl flex items-center justify-center hover:bg-gray-200 cursor-pointer"
-                ref="selectRef"
-                @click="toggleModelDropdown">
-                
-                    <SvgIcon name="deepseek-logo" customCss="w-5 h-5 mr-1.5" />
-                    <span class="text-gray-800 text-xs">{{ currSelectedModel.name }}</span>
-                    <SvgIcon name="down-arrow" customCss="w-5 h-5 ml-1 text-gray-800 transform transition-transform duration-300"
+                <div
+                  class="flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-2.5 py-1.5 transition-colors hover:border-[#4d6bfe]/30 hover:bg-[#f5f7ff] dark:border-gray-600 dark:hover:border-[#6d8bff]/50 dark:hover:bg-[#2a313c]"
+                  ref="selectRef"
+                  @click="toggleModelDropdown">
+                    <SvgIcon :name="currSelectedModel.icon" customCss="mr-1.5 h-5 w-5" />
+                    <span class="text-xs font-medium text-gray-800 dark:text-gray-100">{{ currSelectedModel.name }}</span>
+                    <SvgIcon name="down-arrow" customCss="ml-1 h-4 w-4 text-gray-500 transition-transform duration-300"
                     :class="isModelDropdownOpen ? 'rotate-180' : ''" />
                 </div>
 
                 <!-- 下拉框菜单：向上展开（输入框常在屏幕底部，向下会被裁切） -->
-                <div v-if="isModelDropdownOpen" class="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden">
-                    <div v-for="model in models" :key="model.id" 
-                    class="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between"
+                <div v-if="isModelDropdownOpen"
+                  class="absolute bottom-full left-0 z-20 mb-2 w-56 overflow-hidden rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl shadow-gray-200/60 dark:border-[#3a4450] dark:bg-[#262d37] dark:shadow-none">
+                    <div v-for="model in models" :key="model.id"
+                    class="flex cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 transition-colors hover:bg-[#f5f7ff] dark:hover:bg-gray-700/80"
                     @click="selectModel(model)">
                         <div class="flex items-center">
-                            <SvgIcon :name="model.icon" customCss="w-5 h-5 mr-2" />
+                            <SvgIcon :name="model.icon" customCss="mr-2 h-5 w-5" />
                             <div class="flex flex-col text-xs">
-                                <div class="text-gray-800">{{ model.name }}</div>
-                                <div class="text-gray-500">{{ model.description }}</div>
+                                <div class="font-medium text-gray-800 dark:text-gray-100">{{ model.name }}</div>
+                                <div class="text-gray-500 dark:text-gray-400">{{ model.description }}</div>
                             </div>
                         </div>
                         <!-- 右侧对号 -->
-                        <SvgIcon v-if="model.selected" name="check" customCss="w-3 h-3 text-gray-600" />
+                        <SvgIcon v-if="model.selected" name="check" customCss="h-3.5 w-3.5 text-[#4d6bfe]" />
                     </div>
                 </div>
 
                 <!-- 联网搜索 -->
-                <div class="ml-3 border px-2 py-1 rounded-3xl flex items-center justify-center cursor-pointer"
-                :class="isNetworkSearchSelected ? 'border-[#ceddee] bg-[#DBEAFE] hover:bg-[#C3DAF8]' : 'border-gray-300 hover:bg-gray-200'" 
+                <div
+                  class="ml-2 flex cursor-pointer items-center justify-center rounded-xl border px-2.5 py-1.5 transition-colors"
+                :class="isNetworkSearchSelected
+                  ? 'border-[#c7d6fb] bg-[#edf2ff] hover:bg-[#e2ebff] dark:border-[#3f5cf0] dark:bg-[#26345e] dark:hover:bg-[#2d3d6b]'
+                  : 'border-gray-200 hover:border-[#4d6bfe]/30 hover:bg-[#f5f7ff] dark:border-gray-600 dark:hover:border-[#6d8bff]/50 dark:hover:bg-[#2a313c]'"
                 @click="toggleNetworkSearch">
-                    <SvgIcon name="network" customCss="w-5 h-5 mr-1.5" :class="isNetworkSearchSelected ? 'text-[#4D6BFE]' : 'text-gray-500'" />
-                    <span class="text-xs mr-1" :class="isNetworkSearchSelected ? 'text-[#4D6BFE]' : 'text-gray-800'">联网搜索</span>
+                    <SvgIcon name="network" customCss="mr-1.5 h-5 w-5" :class="isNetworkSearchSelected ? 'text-[#4D6BFE] dark:text-[#8fa6ff]' : 'text-gray-500 dark:text-gray-400'" />
+                    <span class="mr-1 text-xs font-medium" :class="isNetworkSearchSelected ? 'text-[#4D6BFE] dark:text-[#8fa6ff]' : 'text-gray-700 dark:text-gray-200'">联网搜索</span>
                 </div>
             </div>
 
             <div class="grow"></div>
 
-            <!-- 发送按钮 -->
-            <button class="flex items-center justify-center bg-[#4d6bfe] rounded-full w-8 h-8 border border-[#4d6bfe] hover:bg-[#3b5bef] transition-colors
-                    disabled:opacity-50
-                    disabled:cursor-not-allowed"
-                    :disabled="loading || !hasContent"
-                    @click="handleSendMessage"
-                    >
-                <SvgIcon name="up-arrow" customCss="w-5 h-5 text-white"></SvgIcon>
-            </button>
+            <!-- 发送按钮：未输入时 hover 提示“请输入你的问题”（禁用按钮需外套 span 才能触发） -->
+            <a-tooltip placement="top" :title="hasContent ? '' : '请输入你的问题'">
+              <span class="inline-flex">
+                <button class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#4d6bfe] to-[#2e6bff] text-white shadow-md shadow-[#4d6bfe]/30 transition-all
+                      hover:from-[#3f5cf0] hover:to-[#2560f0] active:scale-95
+                      disabled:opacity-40
+                      disabled:cursor-not-allowed disabled:shadow-none"
+                      :disabled="loading || !hasContent"
+                      @click="handleSendMessage"
+                      >
+                  <SvgIcon name="up-arrow" customCss="h-5 w-5 text-white"></SvgIcon>
+                </button>
+              </span>
+            </a-tooltip>
         </div>
         </div>
 
@@ -73,12 +83,12 @@
 <script setup>
 import SvgIcon from '@/components/SvgIcon.vue'
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import { useChatStore } from '@/stores/chatStore'
 
+// 获取 chat store
+const chatStore = useChatStore()
 // 模型列表
-const models = ref([
-  { id: 1, name: 'deepseek-v3', icon: 'deepseek-logo', description: "更流畅", selected: true },
-  { id: 2, name: 'deepseek-r1', icon: 'deepseek-logo', description: "深度思考", selected: false },
-]);
+const models = computed(() => chatStore.models)
 
 // 输入框引用
 const textareaRef = ref(null)
@@ -86,31 +96,24 @@ const textareaRef = ref(null)
 const selectRef = ref(null)
 // 下拉菜单状态
 const isModelDropdownOpen = ref(false)
-// 当前选择的模型，默认为第一个 deepseek-v3
-const currSelectedModel = ref(models.value[0])
-// 是否启用联网搜索
-const isNetworkSearchSelected = ref(false)
-
+// 当前选择的模型，使用 store 中的选中模型
+const currSelectedModel = computed(() => chatStore.selectedModel)
 // 选择模型
 const selectModel = (model) => {
-  // 将所有模型的 selected 置为 false
-  models.value.forEach(m => {
-    m.selected = false;
-  });
-  
-  // 将选中模型的 selected 置为 true
-  model.selected = true;
-  
-  // 更新当前选中的模型
-  currSelectedModel.value = model;
+  // 更新 store 中的选中模型
+  chatStore.updateSelectedModel(model);
   
   // 关闭下拉菜单
   isModelDropdownOpen.value = false;
 }
 
+// 是否启用联网搜索，使用 store 中的状态
+const isNetworkSearchSelected = computed(() => chatStore.isNetworkSearchSelected)
+
 // 切换联网搜索选中状态
 const toggleNetworkSearch = () => {
-    isNetworkSearchSelected.value = !isNetworkSearchSelected.value;
+  // 更新 store 中的联网搜索状态
+  chatStore.updateNetworkSearchStatus(!chatStore.isNetworkSearchSelected)
 }
 
 // 下拉菜单显示/隐藏
@@ -200,6 +203,15 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
+// textarea 回车：直接发送；组合输入（中文）/Shift+Enter 则保留换行
+const handleEnterKey = (event) => {
+  if (event.shiftKey || event.isComposing || event.keyCode === 229) {
+    return
+  }
+  event.preventDefault()
+  handleSendMessage()
+}
+
 // 处理发送消息
 const handleSendMessage = () => {
   // 请求中禁止重复发送
@@ -216,8 +228,8 @@ const handleSendMessage = () => {
   // 把消息内容与当前选中的模型/联网开关一并交给父组件
   emit('sendMessage', {
     message: content,
-    modelName: currSelectedModel.value?.name,
-    networkSearch: isNetworkSearchSelected.value,
+    modelName: chatStore.selectedModel?.name ?? 'deepseek-v3',
+    networkSearch: chatStore.isNetworkSearchSelected
   })
 
   // 清空输入框并复位高度

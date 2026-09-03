@@ -28,5 +28,7 @@ public class ChatMessageDO {
     private String chatUuid;
     private String content;
     private String role;
+    /** 0=窗口活跃 1=已压缩/归档（不再注入模型） */
+    private Integer archived;
     private LocalDateTime createTime;
 }
