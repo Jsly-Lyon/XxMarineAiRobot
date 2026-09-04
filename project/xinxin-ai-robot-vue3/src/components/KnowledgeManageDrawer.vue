@@ -42,11 +42,11 @@
           </template>
           <template v-else-if="column.key === 'action'">
             <span class="whitespace-nowrap">
+              <a-button type="link" size="small" @click="handleDownload(record)">下载</a-button>
+              <a-divider type="vertical" />
               <a-button type="link" size="small" @click="openEditRemark(record)">编辑</a-button>
               <a-divider type="vertical" />
-              <a-popconfirm title="删除该文件？删除后不可恢复。" ok-text="删除" cancel-text="取消" @confirm="handleDeleteDoc(record)">
-                <a-button type="link" danger size="small">删除</a-button>
-              </a-popconfirm>
+              <a-button type="link" danger size="small" @click="openDeleteConfirm(record)">删除</a-button>
             </span>
           </template>
         </template>
@@ -125,6 +125,19 @@
       {{ uploading ? '上传中...' : '开始上传' }}
     </a-button>
   </a-modal>
+
+  <!-- 删除确认弹窗（居中，避免贴右侧边被截断） -->
+  <a-modal
+    v-model:open="deleteModalOpen"
+    width="400px"
+    :centered="true"
+    title="删除问答文件"
+    ok-text="删除"
+    cancel-text="取消"
+    :ok-button-props="{ danger: true }"
+    @ok="handleDeleteOk">
+    <p>删除后该文件及其向量将不可恢复，确认删除吗？</p>
+  </a-modal>
 </template>
 
 <script setup>
@@ -137,7 +150,7 @@ import { filesize } from 'filesize'
 import SparkMD5 from 'spark-md5'
 import { useKnowledgeManageStore } from '@/stores/knowledgeManage'
 import {
-  findCustomerDocPage, deleteCustomerDoc, updateCustomerDocRemark,
+  findCustomerDocPage, deleteCustomerDoc, updateCustomerDocRemark, downloadUploadFile,
   checkFile, uploadFileChunk, mergeFileChunk,
 } from '@/api/customerService'
 
@@ -389,6 +402,10 @@ const startUpload = async () => {
 const docLoading = ref(false)
 const docRows = ref([])
 
+// 删除确认弹窗状态
+const deleteModalOpen = ref(false)
+const deleteTarget = ref(null)
+
 const docColumns = [
   { title: '文件名称', dataIndex: 'fileName', key: 'fileName', ellipsis: true },
   { title: '大小', dataIndex: 'fileSize', key: 'fileSize', width: 100 },
@@ -396,7 +413,7 @@ const docColumns = [
   { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
   { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 180 },
   { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true },
-  { title: '操作', key: 'action', width: 120 },
+  { title: '操作', key: 'action', width: 150 },
 ]
 
 // 处理状态：0-上传中 1-待处理 2-向量化中 3-已完成 4-失败
@@ -477,6 +494,55 @@ const handleDeleteDoc = async (record) => {
   } catch (error) {
     console.error('删除文档失败:', error)
     antMessage.error(error?.message || '删除失败')
+  }
+}
+
+// 下载上传的问答文件（下载即写入后端下载记录）
+const handleDownload = async (record) => {
+  try {
+    const res = await downloadUploadFile(record.id)
+    const disposition = res.headers?.['content-disposition'] || ''
+    const star = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+    let name = record.fileName || `file-${record.id}`
+    if (star) {
+      try {
+        name = decodeURIComponent(star[1])
+      } catch (error) {
+        // 忽略文件名解码异常，回退记录名
+      }
+    }
+
+    const blob = new Blob([res.data], {
+      type: res.headers?.['content-type'] || 'application/octet-stream',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = name
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+
+    antMessage.success('已开始下载')
+  } catch (error) {
+    console.error('下载文件失败:', error)
+    antMessage.error(error?.message || '下载失败，请稍后重试')
+  }
+}
+
+// 打开删除确认弹窗
+const openDeleteConfirm = (record) => {
+  deleteTarget.value = record
+  deleteModalOpen.value = true
+}
+
+// 删除确认
+const handleDeleteOk = async () => {
+  const record = deleteTarget.value
+  deleteModalOpen.value = false
+  if (record) {
+    await handleDeleteDoc(record)
   }
 }
 

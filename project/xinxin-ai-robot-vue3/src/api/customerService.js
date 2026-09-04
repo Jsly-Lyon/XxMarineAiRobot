@@ -21,6 +21,11 @@ export function updateCustomerDocRemark(id, remark) {
     return axios.post("/customer-service/file/update", { id, remark })
 }
 
+// 下载上传的问答文件（下载即写入下载记录，返回 Blob）
+export function downloadUploadFile(fileId) {
+    return axios.get("/download/upload-file", { params: { fileId }, responseType: "blob" })
+}
+
 // 检查文件是否存在（秒传 / 断点续传）
 export function checkFile(fileMd5) {
     return axios.post("/customer-service/file/check", { fileMd5 })
