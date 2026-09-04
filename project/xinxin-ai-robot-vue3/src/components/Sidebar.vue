@@ -20,6 +20,16 @@
         开启新对话
       </button>
 
+      <!-- 其他工具入口 -->
+      <ul class="mb-2 px-3 text-gray-600 dark:text-gray-300">
+        <li
+          class="flex cursor-pointer items-center rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-[#2a313c]"
+          @click="openCustomerServiceDrawer">
+          <SvgIcon name="customer-service" customCss="mr-2 inline h-5 w-5 align-middle" />
+          <span>智能客服</span>
+        </li>
+      </ul>
+
       <!-- 下载记录入口（预留文档上传/下载） -->
       <button
         @click="openDownloadHistory"
@@ -27,6 +37,9 @@
         <DownloadOutlined class="text-base" />
         下载记录
       </button>
+
+      <!-- 分割线 -->
+      <div class="h-1 border-b border-gray-200 mx-4"></div>
 
       <!-- 历史对话区域（仅登录后显示；未登录不展示，也不请求后端） -->
       <template v-if="isLoggedIn">
@@ -185,6 +198,7 @@ import DownloadHistoryDialog from '@/components/DownloadHistoryDialog.vue'
 import { useRouter } from 'vue-router'
 import { findChatHistoryPageList, deleteChat, renameChat } from '@/api/chat'
 import { storeToRefs } from 'pinia'
+import { useCustomerServiceStore } from '@/stores/customerService'
 import { useAuthStore } from '@/stores/auth'
 import { logout as logoutApi } from '@/api/auth'
 
@@ -248,6 +262,15 @@ const handleStartNewChat = () => {
     return
   }
   jumpToIndexPage()
+}
+
+// 打开智能客服右侧抽屉（未登录先弹登录框）
+const openCustomerServiceDrawer = () => {
+  if (!isLoggedIn.value) {
+    openAuthDialog('login')
+    return
+  }
+  useCustomerServiceStore().open()
 }
 
 // 查看下载记录：未登录先弹登录框

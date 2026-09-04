@@ -12,7 +12,8 @@
 
          <!-- 下方容器 -->
         <div class="flex mt-3">
-            	<div class="flex gap-2 relative">
+            <!-- 模型/联网工具行（showTools=false 时不展示） -->
+            	<div v-if="showTools" class="flex gap-2 relative">
                 <!-- 大模型下拉框 -->
                 <div
                   class="flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-2.5 py-1.5 transition-colors hover:border-[#4d6bfe]/30 hover:bg-[#f5f7ff] dark:border-gray-600 dark:hover:border-[#6d8bff]/50 dark:hover:bg-[#2a313c]"
@@ -139,6 +140,11 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  // 是否展示“模型选择 + 联网搜索”工具行（客服抽屉等简版输入场景可关闭）
+  showTools: {
+    type: Boolean,
+    default: true
   },
 })
 

@@ -16,7 +16,7 @@ const routes = [
             title: '对话' // 页面标题
         }
     }
-] 
+]
 
 // 创建路由
 const router = createRouter({

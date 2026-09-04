@@ -1,5 +1,5 @@
 <template>
-  <div class="markdown-container" @click="handleMarkdownClick">
+  <div class="markdown-container" :class="customCss" @click="handleMarkdownClick">
     <div v-html="renderedContent"></div>
   </div>
 </template>
@@ -35,6 +35,10 @@ const logger = {
 
 const props = defineProps({
   content: {
+    type: String,
+    default: ''
+  },
+  customCss: {
     type: String,
     default: ''
   }

@@ -118,6 +118,7 @@ public class ChatServiceImpl implements ChatService {
                             .chatId(chatMessageDO.getChatUuid())
                             .content(chatMessageDO.getContent())
                             .role(chatMessageDO.getRole())
+                            .reasoning(chatMessageDO.getReasoningContent()) // 推理内容
                             .createTime(chatMessageDO.getCreateTime())
                             .build())
                     // 升序排序

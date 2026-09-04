@@ -31,4 +31,5 @@ public class ChatMessageDO {
     /** 0=窗口活跃 1=已压缩/归档（不再注入模型） */
     private Integer archived;
     private LocalDateTime createTime;
+    private String reasoningContent;
 }

@@ -10,23 +10,28 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 分片信息表：记录某文件已上传成功的分片（断点续传用）
+ *
+ * @author: li
+ * @date: 2026/9/4
+ **/
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("t_ai_customer_service_md_storage")
-public class AiCustomerServiceMdStorageDO {
+@TableName("t_file_chunk_info")
+public class FileChunkInfoDO {
 
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String originalFileName;
-    private String newFileName;
-    private String filePath;
-    private Long fileSize;
-    /** 归属用户（上传者） */
-    private Long userId;
-    private Integer status;
-    private String remark;
+    /** 文件 MD5 值 */
+    private String fileMd5;
+    /** 分片序号（从 0 开始） */
+    private Integer chunkNumber;
+    /** 分片文件存储路径 */
+    private String chunkPath;
+    /** 分片大小（字节） */
+    private Long chunkSize;
     private LocalDateTime createTime;
-    private LocalDateTime updateTime;
 }

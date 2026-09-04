@@ -37,6 +37,11 @@ public enum ResponseCodeEnum implements BaseExceptionInterface {
     ONLY_SUPPORT_MARKDOWN("20017", "仅支持上传 Markdown(.md) 文件"),
     UPLOAD_FILE_FAILED("20018", "文件上传失败"),
     DOC_TYPE_NOT_SUPPORT("20019", "不支持的文件类型，仅支持 Markdown/TXT/Word/PPT/PDF/HTML"),
+
+    MERGE_CHUNK_NOT_FOUND("20020", "合并的分片文件不存在"),
+    CHUNK_NUM_NOT_COMPLETE("20021", "分片数量不完整"),
+    FILE_NOT_EXISTED("20022", "文件不存在或无权访问"),
+    DOWNLOAD_RECORD_NOT_EXISTED("20023", "下载记录不存在"),
     ;
 
     // 异常码

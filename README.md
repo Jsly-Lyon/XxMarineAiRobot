@@ -16,12 +16,14 @@
 
 - 🧭 **意图识别与路由**：对话请求经 Advisor 链进行上下文注入与领域路由，配合联网搜索开关选择检索来源。
 - 📚 **文档知识库 + RAG**：支持 **Markdown / TXT / Word / PPT / PDF / HTML** 多格式上传，系统内置固定文档在启动时自动向量化；上传后进入“待向量化 → 向量化中 → 完成/失败”状态机（内容哈希幂等，重复上传覆盖不堆量）。
+- ⚙️ **大文件分片上传**：`file/check(秒传/续传) → upload-chunk → merge-chunk`，合并后异步向量化；全局“问答文件管理”抽屉支持多格式、多文件上传、条件查询（文件名模糊 + 创建时间段）、编辑备注与删除，列表分页、状态标签、中文国际化。
+- 📥 **下载中心**：上传文件与 **AI 回答导出 Markdown** 均支持下载并自动写入**下载记录**（`/download/*`，按用户隔离），可从记录中再次下载。
 - 🔒 **文档检索严格隔离**：入库向量统一携带 `ownerUserId`，检索仅命中 **系统内置文档（owner=0）或当前登录用户本人上传** 的文档，杜绝跨用户泄露。
 - 🧠 **多层记忆管理**：短期消息窗口、结构化「工作区」记忆（目标/事实/假设），以及用户固定槽记忆（偏好/语言/规则/禁忌），AI 回复开头的结构化记忆块会被剥离并以 JSON 落库。
-- ⚡ **SSE 流式对话**：基于 `@microsoft/fetch-event-source` 逐块渲染，支持代码高亮 / 一键复制 / 下载。
+- ⚡ **SSE 流式对话**：基于 `@microsoft/fetch-event-source` 逐块渲染，支持代码高亮 / 一键复制 / 下载；回复可“停止生成”，并具备 30s/90s 超时兜底。
 - 🔐 **登录与数据隔离**：登录/注册以弹窗形式集成在页面内；Sa-Token 全量接口鉴权；用户信息缓存 Redis；会话按 `user_id` 归属，非本人 uuid 一律视为“会话不存在”。
-- 🗂️ **对话与文档管理**：聊天历史分页上翻加载；侧边栏历史会话分页加载、**删除（二次确认）/重命名摘要**；预留「下载记录」入口。
-- 🎨 **产品化前端**：ChatGPT 式居中对话、模型/联网开关、明暗主题（右上角切换，暗色为 Islands Dark 风格，跟随系统并本地持久化）、Pinia 全局状态、输入框自动增高与回车发送、空态引导等。
+- 🗂️ **对话管理**：聊天历史分页上翻加载；侧边栏历史会话分页加载、删除（二次确认）/重命名摘要。
+- 🎨 **产品化前端**：ChatGPT 式居中对话、明暗主题（右上角切换，Islands Dark 风格，持久化）、Pinia 全局状态、Ant 中文、智能客服独立右侧抽屉（客服 logo 头像、无模型/联网工具行）等。
 
 ## 仓库结构
 
@@ -89,12 +91,7 @@ npm run dev
 4. 上传课题文档（Markdown/Word/PPT/PDF/HTML 等）到个人文档库，客服问答即可在**系统内置知识 + 本人文档**范围内回答（严格隔离）。
 5. 右上角按钮可切换明暗主题；会话切换模型 / 联网搜索后发送即可。
 
-> 上传示例：
-> ```bash
-> curl -X POST http://localhost:8080/api/customer-service/document/upload \
->   -H "Authorization: Bearer <token>" \
->   -F "file=@./marine-knowledge.docx"
-> ```
+> 文档上传说明：支持 md/txt/doc(x)/ppt(x)/pdf/html 多格式，**大文件走分片上传**（`file/check → upload-chunk → merge-chunk`），由前端“问答文件管理”抽屉完成；合并成功后异步向量化，状态机 待处理/向量化中/已完成/失败。
 
 ## 接口一览（均以 `/api` 为前缀，经代理转发）
 
@@ -110,10 +107,16 @@ npm run dev
 | POST | `/chat/list` | 登录 | 当前用户的会话列表 |
 | POST | `/chat/summary/rename` | 登录+归属 | 重命名摘要 |
 | POST | `/chat/delete` | 登录+归属 | 删除会话（含消息与关联记忆） |
-| POST | `/customer-service/document/upload` | 登录 | 上传多格式文档（multipart `file`），返回 `fileId` |
-| POST | `/customer-service/md/upload` | 登录 | 上传 Markdown（兼容旧入口） |
-| POST | `/customer-service/md/list` | 登录 | 本人上传文档分页列表（含状态） |
-| POST | `/customer-service/md/delete` | 登录+归属 | 删除文档（本地文件 + 记录 + 向量） |
+| POST | `/customer-service/file/check` | 登录 | 上传前检查（支持秒传/断点续传） |
+| POST | `/customer-service/file/upload-chunk` | 登录 | 上传单个分片（multipart） |
+| POST | `/customer-service/file/merge-chunk` | 登录 | 合并分片生成完整文档并触发异步向量化 |
+| POST | `/customer-service/file/list` | 登录 | 本人问答文档分页列表（含状态，支持文件名/创建时间段查询） |
+| POST | `/customer-service/file/update` | 登录+归属 | 修改文档（备注） |
+| POST | `/customer-service/file/delete` | 登录+归属 | 删除文档（本地文件 + 记录 + 向量） |
+| POST | `/download/ai-export` | 登录 | AI 回答导出 Markdown（落盘并写下载记录），返回 `recordId` |
+| GET | `/download/upload-file?fileId=` | 登录+归属 | 下载上传文件（下载即写入下载记录） |
+| GET | `/download/record/{recordId}` | 登录+归属 | 按下载记录再次下载（AI 导出文件） |
+| GET | `/download/list?current&size` | 登录 | 本人下载记录分页 |
 
 除 `login/register/error` 外，其余接口均需在请求头携带：
 

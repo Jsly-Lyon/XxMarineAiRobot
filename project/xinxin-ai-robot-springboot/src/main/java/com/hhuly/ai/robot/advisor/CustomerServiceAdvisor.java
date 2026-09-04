@@ -31,7 +31,7 @@ public class CustomerServiceAdvisor implements StreamAdvisor {
      * 客服提示词模板
      */
     private static final PromptTemplate DEFAULT_PROMPT_TEMPLATE = new PromptTemplate("""
-            你是一个专业的客服，名为 “小哈 AI 助手”。请根据以下上下文信息回答用户问题。
+            你是一个专业的客服，名为 “瀚海知问 AI 助手”。请根据以下上下文信息回答用户问题。
 
             ## 上下文信息
             {context}
@@ -55,8 +55,8 @@ public class CustomerServiceAdvisor implements StreamAdvisor {
 
             **无法回答时的统一回复**：
             当遇到以下情况时，请统一回复：
-            "此问题暂时无法回答，可以加博主「小哈」的私人微信来咨询，记得添加时一定要备注 **星球咨询**"
-            微信二维码：![](https://img.quanxiaoha.com/quanxiaoha/173950927165691)
+            "此问题暂时无法回答，可以加博主的私人微信来咨询，记得添加时一定要备注 **星球咨询**"
+            
 
             **图片展示**：
             如需要展示图片，请使用 Markdown 格式：![](图片链接)
@@ -75,7 +75,10 @@ public class CustomerServiceAdvisor implements StreamAdvisor {
         UserMessage userMessage = prompt.getUserMessage();
 
         // 双路检索（Dense + BM25 -> RRF），数据隔离在检索服务内部处理
+        long t0 = System.currentTimeMillis();
         List<Document> documents = searchService.search(userMessage.getText(), 3, UserContext.getUserId());
+        log.info("## 客服双路检索完成: query={}, docs={}, cost={}ms",
+                userMessage.getText(), documents.size(), (System.currentTimeMillis() - t0));
 
         // 构建向量查询结果上下文信息
         String context = buildContext(documents);

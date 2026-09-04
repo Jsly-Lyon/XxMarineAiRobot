@@ -31,6 +31,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.context.ApplicationEventPublisher;
@@ -134,14 +135,41 @@ public class ChatController {
         String chatUuid = aiChatReqVO.getChatId();
         // 数据隔离：仅会话归属者可发起流式对话，他人 uuid 一律视为不存在
         chatService.assertChatOwner(chatUuid);
-        // 记忆 JSON 容器：剥离工具把模型回复开头的记忆块吞掉，JSON 写入此容器，流结束时落库
+        // 记忆 JSON 容器：正文剥离工具把模型回复开头的记忆块吞掉，JSON 写入此容器，流结束时落库
         AtomicReference<String> memoryJson = new AtomicReference<>();
+        // 正文记忆块剥离状态机（逐帧喂入，吞掉开头的 [MEMORY_START]...[/MEMORY_END] 记忆块）
+        MemoryBlockStripper.FrameStripper bodyStripper = new MemoryBlockStripper.FrameStripper(memoryJson);
+        // 推理内容游标：reasoningContent 是「累积值」，记录已下发长度用于截取本帧增量
+        int[] reasoningLen = {0};
 
-        // 流式输出：吞掉开头的结构化记忆块，只把正文推给前端
-        return chatClientRequestSpec
+        // 流式输出：推理增量独立下发为 reasoning 帧，正式回答正文经记忆块剥离后下发为 v 帧
+        Flux<AiResponse> aiResponseFrames = chatClientRequestSpec
                 .stream()
-                .content()
-                .transform(stream -> MemoryBlockStripper.strip(stream, memoryJson))
+                .chatResponse()
+                .<AiResponse>handle((chatResponse, sink) -> {
+                    // getResult() 为 null（usage/空帧等）直接跳过
+                    if (chatResponse == null || chatResponse.getResult() == null) {
+                        return;
+                    }
+                    AssistantMessage message = chatResponse.getResult().getOutput();
+
+                    // 1. 推理内容（累积值）：仅本帧有新增时下发增量（思考过程）
+                    String reasoningContent = extractReasoningContent(message);
+                    if (reasoningContent.length() > reasoningLen[0]) {
+                        sink.next(AiResponse.builder()
+                                .reasoning(reasoningContent.substring(reasoningLen[0]))
+                                .build());
+                        reasoningLen[0] = reasoningContent.length();
+                    }
+
+                    // 2. 正式回答正文：经记忆块剥离后下发
+                    String text = message.getText();
+                    if (text != null && !text.isEmpty()) {
+                        for (String body : bodyStripper.feed(text)) {
+                            sink.next(AiResponse.builder().v(body).build());
+                        }
+                    }
+                })
                 .doOnComplete(() -> {
                     String json = memoryJson.get();
                     if (json == null || json.isBlank()) {
@@ -161,9 +189,20 @@ public class ChatController {
                     } catch (Exception ex) {
                         log.error("## 发布会话窗口滚动事件失败", ex);
                     }
-                })
-                .mapNotNull(text -> AiResponse.builder().v(text).build()); // 构建返参 AIResponse
+                });
 
+        return aiResponseFrames;
+    }
+
+    /**
+     * 从 AI 回复消息中提取推理内容（metadata 中的 reasoningContent，累积值）；无推理时返回空串
+     *
+     * @param message AI 助手消息
+     * @return 推理内容（可能为空串）
+     */
+    private String extractReasoningContent(AssistantMessage message) {
+        Object reasoning = message.getMetadata().get("reasoningContent");
+        return reasoning == null ? "" : reasoning.toString();
     }
 
     /**

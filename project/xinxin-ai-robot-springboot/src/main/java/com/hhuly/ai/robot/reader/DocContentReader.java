@@ -199,9 +199,19 @@ public class DocContentReader {
                              Map<String, Object> baseMeta, String heading, boolean force) {
         String content = buffer.toString().trim();
         buffer.setLength(0);
-        if (!content.isEmpty()) {
-            docs.add(buildDoc(content, baseMeta, heading));
+        if (content.isEmpty()) {
+            return;
         }
+        if (content.length() > PlainTextChunker.TEXT_CHUNK_SIZE) {
+            // 超长段落：交给带 15% 重叠的滑动窗口切分，块内保留标题元数据
+            Map<String, Object> meta = new HashMap<>(baseMeta);
+            if (heading != null && !heading.isBlank()) {
+                meta.put("heading", heading);
+            }
+            docs.addAll(PlainTextChunker.chunk(content, meta));
+            return;
+        }
+        docs.add(buildDoc(content, baseMeta, heading));
     }
 
     private Document buildDoc(String text, Map<String, Object> baseMeta, String heading) {

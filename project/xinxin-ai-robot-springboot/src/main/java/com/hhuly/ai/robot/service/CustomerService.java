@@ -1,13 +1,15 @@
 package com.hhuly.ai.robot.service;
 
-import com.hhuly.ai.robot.domain.dos.AiCustomerServiceMdStorageDO;
+import com.hhuly.ai.robot.model.vo.customerService.CheckFileReqVO;
+import com.hhuly.ai.robot.model.vo.customerService.CheckFileRspVO;
 import com.hhuly.ai.robot.model.vo.customerService.DeleteMarkdownFileReqVO;
+import com.hhuly.ai.robot.model.vo.customerService.MergeChunkReqVO;
+import com.hhuly.ai.robot.model.vo.customerService.UploadChunkReqVO;
 import com.hhuly.ai.robot.model.vo.customerService.FindMarkdownFilePageListReqVO;
 import com.hhuly.ai.robot.model.vo.customerService.FindMarkdownFilePageListRspVO;
 import com.hhuly.ai.robot.model.vo.customerService.UpdateMarkdownFileReqVO;
 import com.hhuly.ai.robot.utils.PageResponse;
 import com.hhuly.ai.robot.utils.Response;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 智能客服文件服务接口
@@ -17,22 +19,39 @@ import org.springframework.web.multipart.MultipartFile;
  **/
 public interface CustomerService {
 
-    /**
-     * 上传 Markdown 问答文件：落盘 + 登记(status=PENDING) + 发布事件(由监听器异步向量化)，返回 fileId
-     *
-     * @param file md 文件
-     * @return fileId
-     */
-    Response<Long> uploadMarkdownFile(MultipartFile file);
+//    /**
+//     * 上传 Markdown 问答文件（单次整文件上传，已废弃，分片上传系列接口见后续小节）
+//     */
+//    Response<Long> uploadMarkdownFile(MultipartFile file);
+//
+//    /**
+//     * 通用多格式文档上传（单次整文件上传，已废弃，分片上传系列接口见后续小节）
+//     */
+//    Response<Long> uploadDocument(MultipartFile file);
 
     /**
-     * 通用多格式文档上传：md/txt/doc(x)/ppt(x)/pdf/html 等。
-     * 落盘 + 登记(status=PENDING) + 发布事件(异步向量化)，返回 fileId。
+     * 分片上传前：检查文件是否存在（秒传 / 断点续传）
      *
-     * @param file 文档文件
-     * @return fileId
+     * @param checkFileReqVO 文件 MD5
+     * @return 检查结果
      */
-    Response<Long> uploadDocument(MultipartFile file);
+    Response<CheckFileRspVO> checkFile(CheckFileReqVO checkFileReqVO);
+
+    /**
+     * 文件分片上传（幂等：同一分片重复上传直接成功）
+     *
+     * @param uploadChunkReqVO 分片内容与元信息
+     * @return 处理结果
+     */
+    Response<?> uploadChunk(UploadChunkReqVO uploadChunkReqVO);
+
+    /**
+     * 文件分片合并（校验分片完整后合并，发布事件触发异步向量化）
+     *
+     * @param mergeChunkReqVO 文件 MD5
+     * @return 处理结果
+     */
+    Response<?> mergeChunk(MergeChunkReqVO mergeChunkReqVO);
 
     /**
      * 删除 Markdown 问答文件

@@ -79,6 +79,7 @@ export async function streamChatCompletion(body, { signal, onData, onDone, onErr
                 networkSearch: false,
                 ...body,
             }),
+            openWhenHidden: true, // 保持连接在页面隐藏时也不关闭
             async onopen(response) {
                 // 登录失效：清空登录态并引导重新登录
                 if (response.status === 401) {

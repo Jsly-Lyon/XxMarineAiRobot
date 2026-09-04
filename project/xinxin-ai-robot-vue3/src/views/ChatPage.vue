@@ -58,6 +58,24 @@
                     <div class="answer-container w-full">
                       <!-- loading 为 true 时展示三点加载动画 -->
                       <LoadingDots v-if="chat.loading" />
+
+                      <!-- 推理过程展示（可折叠） -->
+                      <div v-if="chat.reasoning" class="mb-5 text-gray-500 dark:text-gray-400">
+                        <div
+                          class="mb-1 flex cursor-pointer select-none items-center gap-0.5"
+                          @click="toggleReasoning(chat)">
+                          <span class="text-[13px] font-medium">深度思考</span>
+                          <SvgIcon
+                            name="down-arrow"
+                            :customCss="`inline h-4 w-4 transition-transform duration-200 ${chat.collapsedReasoning ? 'rotate-180' : ''}`" />
+                        </div>
+                        <StreamMarkdownRender
+                          v-if="!chat.collapsedReasoning"
+                          customCss="px-2 border-l-2 border-gray-200 text-gray-500! dark:border-gray-600"
+                          :content="chat.reasoning" />
+                      </div>
+
+                      <!-- 正式回答 -->
                       <StreamMarkdownRender v-if="chat.content" :content="chat.content" />
                     </div>
                     <span v-if="chat.timestamp" class="mt-1.5 block pl-1 text-xs text-gray-400">{{ chat.timestamp }}</span>
@@ -125,6 +143,8 @@ const isLoadingMoreHistory = ref(false);
 const mapHistoryMessage = (m) => ({
   role: m.role === 'user' ? 'user' : 'assistant',
   content: m.content ?? '',
+  reasoning: m.reasoning ?? '',
+  collapsedReasoning: false,
   timestamp: formatDisplayTime(m.createTime),
 });
 
@@ -145,18 +165,18 @@ const formatDisplayTime = (time) => {
   return matched ? matched[0] : '';
 };
 
-// 解析单个 SSE 数据块，取 JSON 中的 v 字段；非 JSON 时按纯文本兼容
-const parseStreamContent = (rawData) => {
+// 解析单个 SSE 数据块：取 JSON 中的 v（正式回答）与 reasoning（推理过程）字段；非 JSON 时按纯文本兼容
+const parseStreamPayload = (rawData) => {
   if (!rawData) {
-    return '';
+    return { v: '', reasoning: '' };
   }
 
   try {
     const data = JSON.parse(rawData);
-    return data?.v ?? '';
+    return { v: data?.v ?? '', reasoning: data?.reasoning ?? '' };
   } catch (error) {
     console.warn('SSE 数据不是有效 JSON，已按纯文本兼容处理:', rawData);
-    return rawData;
+    return { v: rawData, reasoning: '' };
   }
 };
 
@@ -191,6 +211,11 @@ const finalizeStream = (hasError = false) => {
   if (hasError && lastMsg && lastMsg.role === 'assistant' && !lastMsg.content) {
     lastMsg.content = '抱歉，请求出错了，请稍后重试。';
   }
+};
+
+// 切换某条消息推理内容的折叠状态
+const toggleReasoning = (chat) => {
+  chat.collapsedReasoning = !chat.collapsedReasoning;
 };
 
 // 统一分页请求：返回 PageResponse 的 body，失败则抛出业务错误
@@ -294,7 +319,14 @@ const handleSend = (payload = {}) => {
   message.value = '';
 
   // 追加 AI 占位消息（loading=true：展示三点加载动画，首个回复块到达后关闭）
-  chatList.value.push({ role: 'assistant', content: '', loading: true, timestamp: getCurrentTime() });
+  chatList.value.push({
+    role: 'assistant',
+    content: '',
+    reasoning: '',
+    collapsedReasoning: false,
+    loading: true,
+    timestamp: getCurrentTime(),
+  });
   isLoading.value = true;
   scrollToBottom();
 
@@ -305,8 +337,8 @@ const handleSend = (payload = {}) => {
     {
       signal: abortController.signal,
       onData: (rawData) => {
-        const chunk = parseStreamContent(rawData);
-        if (!chunk) return;
+        const { v: textChunk, reasoning: reasoningChunk } = parseStreamPayload(rawData);
+        if (!textChunk && !reasoningChunk) return;
 
         const lastMsg = chatList.value[chatList.value.length - 1];
         if (lastMsg && lastMsg.role === 'assistant') {
@@ -314,7 +346,14 @@ const handleSend = (payload = {}) => {
           if (lastMsg.loading) {
             lastMsg.loading = false;
           }
-          lastMsg.content += chunk;
+          // 推理过程增量（后端按帧下发增量，这里逐帧累积）
+          if (reasoningChunk) {
+            lastMsg.reasoning += reasoningChunk;
+          }
+          // 正式回答增量
+          if (textChunk) {
+            lastMsg.content += textChunk;
+          }
         }
         scrollToBottom();
       },

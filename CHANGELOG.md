@@ -2,6 +2,46 @@
 
 本项目采用 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 风格，版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.3.0] - 2026-09-04
+
+下载中心与抽屉交互收口。
+
+### Added（新增）
+
+- **后端下载中心**：
+  - `t_download_record` 下载记录表（V2 迁移）；
+  - `GET /download/upload-file?fileId=`：上传文件下载即写记录（本人）；
+  - `POST /download/ai-export`：AI 回答导出 Markdown（落盘 + 写记录）；
+  - `GET /download/record/{recordId}`：按记录再次下载（AI 导出）；
+  - `GET /download/list`：本人下载记录分页；新增 `customer-service.export-path` 配置。
+
+### Changed（优化）
+
+- 抽屉交互：智能客服与文件管理两抽屉改为**互斥**（同时只开一个），并移除智能客服内的“文件管理”入口（文件管理收敛到右上角全局设置入口），避免遮罩叠层影响输入。
+
+### TODO（进行中）
+
+- 前端接入：文件管理行“下载”按钮、AI 回复“导出 .md”、下载记录弹窗改为真实列表（后端已就绪，等待前端接线）。
+
+## [0.2.2] - 2026-09-04
+
+问答文件管理升级与智能客服抽屉完善。
+
+### Added（新增）
+
+- **全局问答文件管理抽屉**：右上角 settings 入口与客服入口打开同一抽屉；**多格式大文件分片上传**（`file/check → upload-chunk → merge-chunk`，支持秒传/续传），列表分页、删除、编辑（备注）、**条件查询**（文件名模糊 + 创建时间段）、多文件批量上传、按钮 Loading、状态彩色标签；Ant Design 全站 **中文国际化**（`zhCN` + dayjs zh-cn）。
+- **智能客服独立抽屉**：客服 logo 头像、输入区隐藏模型/联网工具行、流式中可“停止生成”、**超时兜底**（30s 无首包 / 90s 总时长）、空流提示。
+- 后端文件模块重构为 `file_storage` + `file_chunk` 分片模型及独立状态枚举；问答文件列表查询支持条件并补 **userId 隔离**。
+
+### Changed（优化）
+
+- 文件管理由“客服抽屉内嵌”收敛为**单一全局抽屉**，客服抽屉仅保留入口；右上角悬浮按钮在任一抽屉打开时自动隐藏。
+- README 接口表同步为 `/customer-service/file/*` 分片端点。
+
+### Fixed（修复）
+
+- 修复客服 SSE 空流导致的自动重连刷请求问题（`onclose` 处理）。
+
 ## [0.2.1] - 2026-09-03
 
 召回评测与知识检索查询构造优化。

@@ -61,8 +61,12 @@ sa-token:
 
 # ============ 问答文档（customer-service） ============
 customer-service:
-  # 用户上传 Markdown 文件的落盘目录（需真实存在）
-  md-storage-path: ${MD_STORAGE_PATH:E:/md-storage}
+  # 用户上传文件合并后的落盘目录（需真实存在）
+  file-storage-path: ${FILE_STORAGE_PATH:E:/md-storage}
+  # 分片小文件临时落盘目录
+  chunk-path: ${CHUNK_PATH:E:/md-storage/chunk}
+  # AI 回答导出文件落盘目录
+  export-path: ${EXPORT_PATH:E:/md-storage/export}
   # 系统内置固定文档扫描位置（classpath ant 模式）
   seed-docs-pattern: ${SEED_DOCS_PATTERN:classpath*:doucument/MarineScience/**}
   seed-docs-enabled: true

@@ -3,7 +3,7 @@ package com.hhuly.ai.robot.controller;
 import com.google.common.collect.Lists;
 import com.hhuly.ai.robot.advisor.CustomerServiceAdvisor;
 import com.hhuly.ai.robot.aspect.ApiOperationLog;
-import com.hhuly.ai.robot.domain.dos.AiCustomerServiceMdStorageDO;
+import com.hhuly.ai.robot.model.vo.chat.AiResponse;
 import com.hhuly.ai.robot.model.vo.customerService.*;
 import com.hhuly.ai.robot.service.CustomerKnowledgeSearchService;
 import com.hhuly.ai.robot.service.CustomerService;
@@ -46,28 +46,55 @@ public class AiCustomerServiceController {
     private Double temperature;
 
     /**
-     * 问答 MD 文件上传（上传后异步向量化）
+     * 问答 MD 文件上传（单次整文件上传，已废弃，等待分片上传/合并接口）
      */
-    @PostMapping(value = "/md/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiOperationLog(description = "上传问答 Markdown 文件")
-    public Response<Long> uploadMarkdownFile(@RequestPart(value = "file", required = false) MultipartFile file) {
-        return customerService.uploadMarkdownFile(file);
+//    @PostMapping(value = "/md/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @ApiOperationLog(description = "上传问答 Markdown 文件")
+//    public Response<Long> uploadMarkdownFile(@RequestPart(value = "file", required = false) MultipartFile file) {
+//        return customerService.uploadMarkdownFile(file);
+//    }
+//
+//    /**
+//     * 问答多格式文档上传（单次整文件上传，已废弃，等待分片上传/合并接口）
+//     */
+//    @PostMapping(value = "/document/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @ApiOperationLog(description = "上传问答多格式文档")
+//    public Response<Long> uploadDocument(@RequestPart(value = "file", required = false) MultipartFile file) {
+//        return customerService.uploadDocument(file);
+//    }
+
+    /**
+     * 分片上传前：检查文件是否存在（秒传 / 断点续传）
+     */
+    @PostMapping("/file/check")
+    @ApiOperationLog(description = "检查文件是否存在")
+    public Response<CheckFileRspVO> checkFile(@RequestBody @Validated CheckFileReqVO checkFileReqVO) {
+        return customerService.checkFile(checkFileReqVO);
     }
 
     /**
-     * 问答多格式文档上传（md/txt/doc(x)/ppt(x)/pdf/html，上传后异步向量化）
+     * 文件分片上传（multipart/form-data 表单方式提交）
      */
-    @PostMapping(value = "/document/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiOperationLog(description = "上传问答多格式文档")
-    public Response<Long> uploadDocument(@RequestPart(value = "file", required = false) MultipartFile file) {
-        return customerService.uploadDocument(file);
+    @PostMapping("/file/upload-chunk")
+//    @ApiOperationLog(description = "文件分片上传") // 入参含 MultipartFile，日志切面序列化会报错，故注释
+    public Response<?> uploadChunk(@ModelAttribute UploadChunkReqVO uploadChunkReqVO) {
+        return customerService.uploadChunk(uploadChunkReqVO);
+    }
+
+    /**
+     * 文件分片合并（合并完成后自动触发向量化）
+     */
+    @PostMapping("/file/merge-chunk")
+    @ApiOperationLog(description = "文件分片合并")
+    public Response<?> mergeChunk(@RequestBody @Validated MergeChunkReqVO mergeChunkReqVO) {
+        return customerService.mergeChunk(mergeChunkReqVO);
     }
 
     /**
      * 删除问答文件（本地文件 + 记录 + 联动清理向量，仅本人）
      */
-    @PostMapping("/md/delete")
-    @ApiOperationLog(description = "删除 Markdown 问答文件")
+    @PostMapping("/file/delete")
+    @ApiOperationLog(description = "删除问答文件")
     public Response<?> deleteMarkdownFile(@RequestBody @Validated DeleteMarkdownFileReqVO deleteMarkdownFileReqVO) {
         return customerService.deleteMarkdownFile(deleteMarkdownFileReqVO);
     }
@@ -75,8 +102,8 @@ public class AiCustomerServiceController {
     /**
      * 分页查询问答文件列表（仅本人）
      */
-    @PostMapping("/md/list")
-    @ApiOperationLog(description = "Markdown 问答文件分页查询")
+    @PostMapping("/file/list")
+    @ApiOperationLog(description = "问答文件分页查询")
     public PageResponse<FindMarkdownFilePageListRspVO> findMarkdownFilePageList(@RequestBody @Validated FindMarkdownFilePageListReqVO findMarkdownFilePageListReqVO) {
         return customerService.findMarkdownFilePageList(findMarkdownFilePageListReqVO);
     }
@@ -84,8 +111,8 @@ public class AiCustomerServiceController {
     /**
      * 修改问答文件信息（仅本人）
      */
-    @PostMapping("/md/update")
-    @ApiOperationLog(description = "修改 Markdown 问答文件信息")
+    @PostMapping("/file/update")
+    @ApiOperationLog(description = "修改问答文件信息")
     public Response<?> updateMarkdownFile(@RequestBody @Validated UpdateMarkdownFileReqVO updateMarkdownFileReqVO) {
         return customerService.updateMarkdownFile(updateMarkdownFileReqVO);
     }
@@ -96,7 +123,7 @@ public class AiCustomerServiceController {
      */
     @PostMapping(value = "/chat/completion", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ApiOperationLog(description = "AI 智能客服对话")
-    public Flux<String> chat(@RequestBody @Validated AiCustomerServiceChatReqVO aiChatReqVO) {
+    public Flux<AiResponse> chat(@RequestBody @Validated AiCustomerServiceChatReqVO aiChatReqVO) {
         // 用户消息
         String userMessage = aiChatReqVO.getMessage();
 
@@ -123,10 +150,14 @@ public class AiCustomerServiceController {
         // 应用 Advisor 集合
         chatClientRequestSpec.advisors(advisors);
 
-        // 流式输出
+        // 流式输出（加日志以便定位：是否检索后一直无 chunk / 报错 / 直接结束）
         return chatClientRequestSpec
                 .stream()
-                .content();
+                .content()
+                .mapNotNull(text -> AiResponse.builder().v(text).build()) // 构建返参 AIResponse
+                .doOnNext(resp -> log.info("## 客服流式输出块: {}", resp.getV()))
+                .doOnError(err -> log.error("## 客服流式输出错误: {}", err.getMessage(), err))
+                .doFinally(signalType -> log.info("## 客服流结束: signal={}", signalType));
     }
 
 
